@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CashFlow AI — Smart Forecasting & Outlier Detection</title>
-  <meta name="description" content="AI-powered UPI cash flow forecasting with Holt-Winters exponential smoothing, 30/60/90-day prediction horizons, and real-time outlier detection for Indian digital payments." />
+  <title>CashFlow AI — MSME Credit Intelligence Platform</title>
+  <meta name="description" content="AI-powered MSME credit decisioning platform with Holt-Winters forecasting, 4-pillar credit scoring, early-warning engine, scenario simulation, and Razorpay-style lender risk console." />
 
   <!-- Preconnect for Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
@@ -25,20 +26,31 @@
 <div id="loader" role="status" aria-live="polite">
   <div class="loader-logo">CashFlow AI</div>
   <div class="loader-spinner"></div>
-  <p class="loader-text" id="loader-text">Loading transaction dataset…</p>
+  <p class="loader-text" id="loader-text">Generating synthetic MSME data…</p>
 </div>
 
 <!-- ── HEADER ──────────────────────────────────────────────── -->
 <header class="header">
   <div class="header-inner">
     <div class="logo">
-      <div class="logo-icon">📊</div>
+      <div class="logo-icon">₹</div>
       <span class="logo-text">CashFlow AI</span>
     </div>
+
+    <!-- ROLE SWITCHER -->
+    <div class="role-switcher" id="role-switcher">
+      <button class="role-btn active" data-role="msme" id="role-msme">
+        <span class="role-icon">🏪</span> MSME View
+      </button>
+      <button class="role-btn" data-role="lender" id="role-lender">
+        <span class="role-icon">🏦</span> Lender Portal
+      </button>
+      <div class="role-slider" id="role-slider"></div>
+    </div>
+
     <div class="header-meta">
-      <span>UPI Transactions · India 2024</span>
-      <span class="badge badge-live">● Live Forecast</span>
       <span class="badge badge-ai">Holt-Winters</span>
+      <span class="badge badge-live">● Live</span>
     </div>
   </div>
 </header>
@@ -46,217 +58,316 @@
 <!-- ── MAIN ─────────────────────────────────────────────────── -->
 <main class="main">
 
-  <!-- ── Controls ─────────────────────────────────────────── -->
-  <section class="panel fade-in" aria-label="Dashboard Controls">
-    <div class="controls-grid">
-
-      <!-- Cohort type -->
-      <div class="control-group">
-        <div class="control-label">Cohort Filter</div>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
-          <label style="display:flex;gap:.4rem;align-items:center;cursor:pointer;font-size:.9rem;">
-            <input type="radio" name="cohort-type" value="overall" checked id="radio-overall" />
-            All India
-          </label>
-          <label style="display:flex;gap:.4rem;align-items:center;cursor:pointer;font-size:.9rem;">
-            <input type="radio" name="cohort-type" value="state" id="radio-state" />
-            By State
-          </label>
-          <label style="display:flex;gap:.4rem;align-items:center;cursor:pointer;font-size:.9rem;">
-            <input type="radio" name="cohort-type" value="bank" id="radio-bank" />
-            By Bank
-          </label>
-        </div>
-      </div>
-
-      <!-- State select (hidden by default) -->
-      <div class="control-group" id="state-group" style="display:none;">
-        <label class="control-label" for="select-state">State</label>
-        <select id="select-state" aria-label="Select state cohort">
-          <option value="">— Pick a state —</option>
-        </select>
-      </div>
-
-      <!-- Bank select (hidden by default) -->
-      <div class="control-group" id="bank-group" style="display:none;">
-        <label class="control-label" for="select-bank">Bank</label>
-        <select id="select-bank" aria-label="Select bank cohort">
-          <option value="">— Pick a bank —</option>
-        </select>
-      </div>
-
-      <!-- Starting Balance -->
-      <div class="control-group">
-        <label class="control-label" for="start-balance">Starting Balance (INR)</label>
-        <input type="number" id="start-balance" value="5000000" min="0" step="100000"
-               aria-label="Starting cash balance in INR" />
-      </div>
-
-      <!-- Forecast Horizon -->
-      <div class="control-group">
-        <div class="control-label">Forecast Horizon</div>
-        <div class="horizon-buttons">
-          <button class="btn-horizon" data-days="30" id="btn-30">30 Days</button>
-          <button class="btn-horizon" data-days="60" id="btn-60">60 Days</button>
-          <button class="btn-horizon active" data-days="90" id="btn-90">90 Days</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Holt-Winters sliders row -->
-    <div class="controls-grid" style="margin-top:1.25rem;">
-
-      <!-- Alpha -->
-      <div class="control-group">
-        <label class="control-label" for="alpha-slider">
-          α Level Smoothing <span id="alpha-val">0.30</span>
-        </label>
-        <div class="range-track">
-          <input type="range" id="alpha-slider" min="0.01" max="0.99" step="0.01" value="0.30"
-                 aria-label="Alpha: level smoothing factor" />
-        </div>
-      </div>
-
-      <!-- Beta -->
-      <div class="control-group">
-        <label class="control-label" for="beta-slider">
-          β Trend Smoothing <span id="beta-val">0.10</span>
-        </label>
-        <div class="range-track">
-          <input type="range" id="beta-slider" min="0.01" max="0.99" step="0.01" value="0.10"
-                 aria-label="Beta: trend smoothing factor" />
-        </div>
-      </div>
-
-      <!-- Gamma -->
-      <div class="control-group">
-        <label class="control-label" for="gamma-slider">
-          γ Seasonal <span id="gamma-val">0.20</span>
-        </label>
-        <div class="range-track">
-          <input type="range" id="gamma-slider" min="0.01" max="0.99" step="0.01" value="0.20"
-                 aria-label="Gamma: seasonal smoothing factor" />
-        </div>
-      </div>
-
-      <!-- kSigma -->
-      <div class="control-group">
-        <label class="control-label" for="sigma-slider">
-          Outlier Threshold (k·σ) <span id="sigma-val">2.0</span>
-        </label>
-        <div class="range-track">
-          <input type="range" id="sigma-slider" min="1.0" max="3.5" step="0.1" value="2.0"
-                 aria-label="Outlier sensitivity: k standard deviations" />
-        </div>
-      </div>
-
+  <!-- ── Profile Selector ──────────────────────────────────── -->
+  <section class="panel fade-in profile-selector-panel" id="profile-panel">
+    <div class="section-title">📋 MSME Profile</div>
+    <div class="profile-grid" id="profile-grid">
+      <!-- Filled by JS -->
     </div>
   </section>
 
-  <!-- ── Metric Cards ──────────────────────────────────────── -->
-  <div class="metrics-grid fade-in fade-in-delay-1">
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ── MSME VIEW ─────────────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div id="msme-view">
 
-    <div class="metric-card" style="--accent: var(--cyan);">
-      <div class="metric-icon" style="background:hsl(195,100%,55%,0.15);color:var(--cyan);">↕</div>
-      <div class="metric-label">Net Cash Flow (YTD)</div>
-      <div class="metric-value" id="metric-net">—</div>
-      <div class="metric-sub">Inflows − Outflows</div>
+    <!-- ── Metric Cards ────────────────────────────────────── -->
+    <div class="metrics-grid fade-in fade-in-delay-1" id="msme-metrics">
+      <div class="metric-card" style="--accent: var(--cyan);">
+        <div class="metric-icon" style="background:hsl(195,100%,55%,0.15);color:var(--cyan);">₹</div>
+        <div class="metric-label">Current Balance</div>
+        <div class="metric-value" id="m-balance">—</div>
+        <div class="metric-sub">End of historical period</div>
+      </div>
+
+      <div class="metric-card" style="--accent: var(--emerald);">
+        <div class="metric-icon" style="background:hsl(152,68%,48%,0.15);color:var(--emerald);">📈</div>
+        <div class="metric-label">30-Day Run Rate</div>
+        <div class="metric-value" id="m-runrate">—</div>
+        <div class="metric-sub">Projected balance in 30 days</div>
+      </div>
+
+      <div class="metric-card" style="--accent: var(--amber);">
+        <div class="metric-icon" style="background:hsl(38,95%,55%,0.15);color:var(--amber);">🔥</div>
+        <div class="metric-label">Daily Burn Rate</div>
+        <div class="metric-value" id="m-burn">—</div>
+        <div class="metric-sub">Avg daily outflow (30d)</div>
+      </div>
+
+      <div class="metric-card" style="--accent: var(--purple);">
+        <div class="metric-icon" style="background:hsl(264,80%,65%,0.15);color:var(--purple);">🛡️</div>
+        <div class="metric-label">Credit Score</div>
+        <div class="metric-value" id="m-score">—</div>
+        <div class="metric-sub" id="m-score-tier">—</div>
+      </div>
+
+      <div class="metric-card" style="--accent: var(--slate);">
+        <div class="metric-icon" style="background:hsl(215,20%,65%,0.15);color:var(--slate);">⏱️</div>
+        <div class="metric-label">Runway</div>
+        <div class="metric-value" id="m-runway">—</div>
+        <div class="metric-sub">Days at current burn rate</div>
+      </div>
+
+      <div class="metric-card" style="--accent: var(--ruby);">
+        <div class="metric-icon" style="background:hsl(356,80%,58%,0.15);color:var(--ruby);">⚠</div>
+        <div class="metric-label">Spending Spikes</div>
+        <div class="metric-value" id="m-outliers">—</div>
+        <div class="metric-sub">Outlier days detected</div>
+      </div>
     </div>
 
-    <div class="metric-card" style="--accent: var(--emerald);">
-      <div class="metric-icon" style="background:hsl(152,68%,48%,0.15);color:var(--emerald);">₹</div>
-      <div class="metric-label">End-of-Period Balance</div>
-      <div class="metric-value" id="metric-balance">—</div>
-      <div class="metric-sub">After start balance</div>
+    <!-- ── Early Warning Alerts ────────────────────────────── -->
+    <section class="warnings-panel fade-in fade-in-delay-1" id="warnings-panel" style="display:none;">
+      <div class="section-title">🚨 Early Warnings</div>
+      <div class="warnings-list" id="warnings-list">
+        <!-- Filled by JS -->
+      </div>
+      <div class="mitigations-grid" id="mitigations-grid">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <!-- ── Controls ────────────────────────────────────────── -->
+    <section class="panel fade-in fade-in-delay-2" aria-label="Dashboard Controls">
+      <div class="controls-grid">
+        <!-- Forecast Horizon -->
+        <div class="control-group">
+          <div class="control-label">Forecast Horizon</div>
+          <div class="horizon-buttons">
+            <button class="btn-horizon" data-days="30" id="btn-30">30 Days</button>
+            <button class="btn-horizon" data-days="60" id="btn-60">60 Days</button>
+            <button class="btn-horizon active" data-days="90" id="btn-90">90 Days</button>
+          </div>
+        </div>
+
+        <!-- Alpha -->
+        <div class="control-group">
+          <label class="control-label" for="alpha-slider">
+            α Level <span id="alpha-val">0.30</span>
+          </label>
+          <div class="range-track">
+            <input type="range" id="alpha-slider" min="0.01" max="0.99" step="0.01" value="0.30" />
+          </div>
+        </div>
+
+        <!-- Beta -->
+        <div class="control-group">
+          <label class="control-label" for="beta-slider">
+            β Trend <span id="beta-val">0.10</span>
+          </label>
+          <div class="range-track">
+            <input type="range" id="beta-slider" min="0.01" max="0.99" step="0.01" value="0.10" />
+          </div>
+        </div>
+
+        <!-- Gamma -->
+        <div class="control-group">
+          <label class="control-label" for="gamma-slider">
+            γ Seasonal <span id="gamma-val">0.20</span>
+          </label>
+          <div class="range-track">
+            <input type="range" id="gamma-slider" min="0.01" max="0.99" step="0.01" value="0.20" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Cash Flow Chart ─────────────────────────────────── -->
+    <div class="charts-grid fade-in fade-in-delay-2">
+      <div class="chart-panel">
+        <div class="chart-title">
+          📈 Daily Cash Balance & Forecast
+          <span class="chart-subtitle">Holt-Winters additive · ±15% confidence</span>
+        </div>
+        <div class="chart-wrapper-tall">
+          <canvas id="chart-balance" aria-label="Cash balance and forecast chart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-title">🍩 Expense Breakdown</div>
+        <div class="chart-wrapper-tall">
+          <canvas id="chart-category" aria-label="Expense category distribution chart"></canvas>
+        </div>
+      </div>
     </div>
 
-    <div class="metric-card" style="--accent: var(--amber);">
-      <div class="metric-icon" style="background:hsl(38,95%,55%,0.15);color:var(--amber);">⚠</div>
-      <div class="metric-label">Spending Spikes</div>
-      <div class="metric-value" id="metric-outliers">—</div>
-      <div class="metric-sub">Outlier days detected</div>
-    </div>
-
-    <div class="metric-card" style="--accent: var(--purple);">
-      <div class="metric-icon" style="background:hsl(264,80%,65%,0.15);color:var(--purple);">⬆</div>
-      <div class="metric-label">HW Trend (β)</div>
-      <div class="metric-value" id="metric-trend" style="font-size:1.2rem;">—</div>
-      <div class="metric-sub">Avg daily momentum</div>
-    </div>
-
-  </div>
-
-  <!-- ── Main Charts ───────────────────────────────────────── -->
-  <div class="charts-grid fade-in fade-in-delay-2">
-
-    <!-- Balance + Forecast Chart -->
-    <div class="chart-panel">
+    <!-- ── Outflow + Outlier Detection Chart ────────────────── -->
+    <div class="chart-panel fade-in fade-in-delay-3">
       <div class="chart-title">
-        📈 Daily Cash Balance & Forecast
-        <span style="margin-left:auto;font-size:0.75rem;color:var(--text-muted);">
-          Holt-Winters additive · ±15% confidence
-        </span>
+        🚨 Daily Outflows & Outlier Detection
+        <span class="chart-subtitle">14-day moving σ · amber triangles = spikes</span>
       </div>
-      <div class="chart-wrapper-tall">
-        <canvas id="chart-balance" aria-label="Cash balance and forecast chart"></canvas>
+      <div class="chart-wrapper">
+        <canvas id="chart-outflow" aria-label="Daily outflows with outlier detection"></canvas>
       </div>
     </div>
 
-    <!-- Category Doughnut -->
-    <div class="chart-panel">
-      <div class="chart-title">🍩 Expense Breakdown</div>
+    <!-- ── Scenario Simulator ──────────────────────────────── -->
+    <section class="panel fade-in fade-in-delay-3 simulator-panel" id="simulator-panel">
+      <div class="section-title">🎛️ Scenario Simulator</div>
+      <p class="simulator-desc">Test "what-if" scenarios and see how they impact your projected cash balance in real time.</p>
+      <div class="simulator-grid">
+        <div class="sim-control">
+          <label class="control-label" for="sim-delay-pct">
+            Receivables Delayed <span id="sim-delay-pct-val">0%</span>
+          </label>
+          <div class="range-track">
+            <input type="range" id="sim-delay-pct" min="0" max="80" step="5" value="0" />
+          </div>
+        </div>
+        <div class="sim-control">
+          <label class="control-label" for="sim-delay-days">
+            Delay Duration <span id="sim-delay-days-val">0 days</span>
+          </label>
+          <div class="range-track">
+            <input type="range" id="sim-delay-days" min="0" max="30" step="1" value="0" />
+          </div>
+        </div>
+        <div class="sim-control">
+          <label class="control-label" for="sim-revenue">
+            Revenue Change <span id="sim-revenue-val">0%</span>
+          </label>
+          <div class="range-track">
+            <input type="range" id="sim-revenue" min="-50" max="50" step="5" value="0" />
+          </div>
+        </div>
+        <div class="sim-control">
+          <label class="control-label" for="sim-emergency">
+            Emergency Expense <span id="sim-emergency-val">₹0</span>
+          </label>
+          <div class="range-track">
+            <input type="range" id="sim-emergency" min="0" max="1000000" step="50000" value="0" />
+          </div>
+        </div>
+      </div>
+      <div class="sim-result" id="sim-result" style="display:none;">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <!-- ── Outlier Table ───────────────────────────────────── -->
+    <section class="panel fade-in fade-in-delay-4" aria-label="Outlier details table">
+      <div class="section-title">⚡ Spending Spike Details</div>
+      <div class="outlier-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Outflow</th>
+              <th>Threshold</th>
+              <th>Severity</th>
+              <th>Top Category</th>
+            </tr>
+          </thead>
+          <tbody id="outlier-tbody">
+            <tr>
+              <td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">
+                Loading…
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+  <!-- /MSME VIEW -->
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ── LENDER VIEW ───────────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div id="lender-view" style="display:none;">
+
+    <!-- ── Credit Score Hero ───────────────────────────────── -->
+    <div class="lender-hero fade-in">
+      <div class="gauge-container">
+        <svg class="gauge-svg" viewBox="0 0 200 200" id="gauge-svg">
+          <defs>
+            <linearGradient id="gauge-grad-good" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:hsl(152,68%,48%)" />
+              <stop offset="100%" style="stop-color:hsl(195,100%,55%)" />
+            </linearGradient>
+            <linearGradient id="gauge-grad-mid" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:hsl(38,95%,55%)" />
+              <stop offset="100%" style="stop-color:hsl(30,80%,60%)" />
+            </linearGradient>
+            <linearGradient id="gauge-grad-bad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:hsl(356,80%,58%)" />
+              <stop offset="100%" style="stop-color:hsl(30,80%,60%)" />
+            </linearGradient>
+          </defs>
+          <!-- Track -->
+          <circle cx="100" cy="100" r="85" fill="none" stroke="hsl(222,20%,15%)" stroke-width="12"
+                  stroke-dasharray="401.92" stroke-dashoffset="100.48"
+                  transform="rotate(135 100 100)" stroke-linecap="round" />
+          <!-- Value arc -->
+          <circle cx="100" cy="100" r="85" fill="none" stroke="url(#gauge-grad-good)" stroke-width="12"
+                  stroke-dasharray="401.92" stroke-dashoffset="401.92"
+                  transform="rotate(135 100 100)" stroke-linecap="round"
+                  id="gauge-arc" class="gauge-arc" />
+          <!-- Center text -->
+          <text x="100" y="92" text-anchor="middle" class="gauge-score-text" id="gauge-score">0</text>
+          <text x="100" y="112" text-anchor="middle" class="gauge-label-text">Credit Score</text>
+        </svg>
+      </div>
+      <div class="gauge-info">
+        <div class="risk-badge" id="risk-badge">—</div>
+        <div class="lender-business-name" id="lender-biz-name">—</div>
+        <div class="lender-business-sector" id="lender-biz-sector">—</div>
+      </div>
+    </div>
+
+    <!-- ── Risk Engine Breakdown (Razorpay Shield Style) ──── -->
+    <section class="panel fade-in fade-in-delay-1">
+      <div class="section-title">🛡️ Risk Engine Breakdown</div>
+      <div class="risk-breakdown-grid" id="risk-breakdown">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <!-- ── Score Pillars Breakdown ──────────────────────────── -->
+    <section class="panel fade-in fade-in-delay-2">
+      <div class="section-title">📊 Score Pillar Analysis</div>
+      <div class="pillars-grid" id="pillars-grid">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <!-- ── Explainability Matrix ───────────────────────────── -->
+    <section class="panel fade-in fade-in-delay-2" id="explain-panel">
+      <div class="section-title">🔍 Score Deduction Factors</div>
+      <div class="explain-list" id="explain-list">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <!-- ── Loan Pre-Approval ───────────────────────────────── -->
+    <section class="loan-card fade-in fade-in-delay-3" id="loan-card">
+      <!-- Filled by JS -->
+    </section>
+
+    <!-- ── Lender Forecast Chart ───────────────────────────── -->
+    <div class="chart-panel fade-in fade-in-delay-3">
+      <div class="chart-title">
+        📈 Cash Flow Trajectory
+        <span class="chart-subtitle">Lender Risk View · Historical + Forecast</span>
+      </div>
       <div class="chart-wrapper-tall">
-        <canvas id="chart-category" aria-label="Expense category distribution chart"></canvas>
+        <canvas id="chart-lender-balance" aria-label="Lender cash flow trajectory chart"></canvas>
       </div>
     </div>
 
   </div>
-
-  <!-- ── Outflow + Outlier Detection Chart ────────────────── -->
-  <div class="chart-panel fade-in fade-in-delay-3">
-    <div class="chart-title">
-      🚨 Daily Outflows & Outlier Detection
-      <span style="margin-left:auto;font-size:0.75rem;color:var(--text-muted);">
-        14-day moving σ · amber triangles = spikes
-      </span>
-    </div>
-    <div class="chart-wrapper">
-      <canvas id="chart-outflow" aria-label="Daily outflows with outlier detection"></canvas>
-    </div>
-  </div>
-
-  <!-- ── Outlier Table ─────────────────────────────────────── -->
-  <section class="panel fade-in fade-in-delay-4" aria-label="Outlier details table">
-    <div class="section-title">⚡ Spending Spike Details</div>
-    <div class="outlier-table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Outflow</th>
-            <th>Threshold</th>
-            <th>Severity</th>
-            <th>Top Category</th>
-          </tr>
-        </thead>
-        <tbody id="outlier-tbody">
-          <tr>
-            <td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">
-              Loading…
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+  <!-- /LENDER VIEW -->
 
 </main>
 
 <!-- ── FOOTER ───────────────────────────────────────────────── -->
 <footer class="footer">
-  CashFlow AI · Built with ❤️ &nbsp;|&nbsp; Data: UPI Transactions India 2024 (250K records)
-  &nbsp;|&nbsp; Forecasting: Holt-Winters Triple Exponential Smoothing
+  CashFlow AI · MSME Credit Intelligence Platform &nbsp;|&nbsp;
+  Forecasting: Holt-Winters Triple Exponential Smoothing &nbsp;|&nbsp;
+  Credit Engine: 4-Pillar Scoring (DSCR · CVI · Trend · Liquidity)
 </footer>
 
 </body>

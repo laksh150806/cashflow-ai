@@ -5,6 +5,8 @@
  * Implements:
  *   1. Holt-Winters Triple Exponential Smoothing (additive, m=7 weekly seasonality)
  *   2. Moving Standard Deviation Outlier Detection
+ *   3. Separate Inflow/Outflow Forecasting
+ *   4. Zero-Balance Date Projection
  */
 
 'use strict';
@@ -138,6 +140,82 @@ export function holtWinters(y, alpha = 0.3, beta = 0.1, gamma = 0.2, horizon = 9
   }
 
   return { fitted, level: levels, trend: trends, seasonal: seasonals, forecast, upper, lower };
+}
+
+// ─── SEPARATE INFLOW / OUTFLOW FORECASTING ───────────────────────────────────
+
+/**
+ * Run Holt-Winters separately on inflows and outflows, then derive net forecast.
+ *
+ * @param {number[]} inflows  - historical daily inflow series
+ * @param {number[]} outflows - historical daily outflow series
+ * @param {object}   params   - { alpha, beta, gamma, horizon, m, confPct }
+ * @returns {{
+ *   inflowForecast: object,    // HW result for inflows
+ *   outflowForecast: object,   // HW result for outflows
+ *   netForecast: number[],     // inflow forecast − outflow forecast
+ *   netUpper: number[],        // optimistic net (high inflow − low outflow)
+ *   netLower: number[],        // pessimistic net (low inflow − high outflow)
+ * }}
+ */
+export function forecastInflowOutflow(inflows, outflows, params = {}) {
+  const {
+    alpha = 0.3,
+    beta = 0.1,
+    gamma = 0.2,
+    horizon = 90,
+    m = 7,
+    confPct = 0.15,
+  } = params;
+
+  const hwIn = holtWinters(inflows, alpha, beta, gamma, horizon, m, confPct);
+  const hwOut = holtWinters(outflows, alpha, beta, gamma, horizon, m, confPct);
+
+  const netForecast = [];
+  const netUpper = [];
+  const netLower = [];
+
+  for (let i = 0; i < horizon; i++) {
+    netForecast.push(hwIn.forecast[i] - hwOut.forecast[i]);
+    netUpper.push(hwIn.upper[i] - hwOut.lower[i]);   // optimistic
+    netLower.push(hwIn.lower[i] - hwOut.upper[i]);    // pessimistic
+  }
+
+  return { inflowForecast: hwIn, outflowForecast: hwOut, netForecast, netUpper, netLower };
+}
+
+// ─── ZERO-BALANCE DATE PROJECTION ────────────────────────────────────────────
+
+/**
+ * Scan a forecast balance series to find when balance first crosses zero.
+ *
+ * @param {number[]} forecastNetFlows - daily net flow forecasts
+ * @param {number}   currentBalance   - starting balance
+ * @param {string}   startDate        - ISO date string (day after last historical date)
+ * @returns {{ daysUntilZero: number | null, zeroDate: string | null, projectedBalances: number[] }}
+ */
+export function projectZeroBalanceDate(forecastNetFlows, currentBalance, startDate) {
+  let balance = currentBalance;
+  const projectedBalances = [];
+  let daysUntilZero = null;
+
+  for (let i = 0; i < forecastNetFlows.length; i++) {
+    balance += forecastNetFlows[i];
+    projectedBalances.push(balance);
+
+    if (balance <= 0 && daysUntilZero === null) {
+      daysUntilZero = i + 1;
+    }
+  }
+
+  let zeroDate = null;
+  if (daysUntilZero !== null) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + daysUntilZero - 1);
+    zeroDate = d.toISOString().slice(0, 10);
+  }
+
+  return { daysUntilZero, zeroDate, projectedBalances };
 }
 
 // ─── OUTLIER DETECTION ────────────────────────────────────────────────────────
