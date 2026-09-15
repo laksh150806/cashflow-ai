@@ -22,7 +22,7 @@ import { runWarningEngine } from './warning-engine.js';
 // ─── STATE ────────────────────────────────────────────────────────────────────
 const state = {
   profiles: {},              // Generated synthetic profiles
-  currentProfileKey: 'kirana',
+  currentProfileKey: 'healthyKirana',
   role: 'msme',              // 'msme' | 'lender'
   horizon: 90,
   alpha: 0.30,
