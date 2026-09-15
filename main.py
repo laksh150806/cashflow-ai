@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
@@ -16,7 +18,7 @@ app = FastAPI(title="CashFlow AI - Decision Engine")
 
 @app.get("/")
 def root():
-    return {"status": "CashFlow AI backend running"}
+    return FileResponse("index.html")
 
 
 # ---------- BUSINESSES ----------
@@ -180,3 +182,5 @@ def get_summary(business_id: int, db: Session = Depends(get_db)):
         } if latest_forecast else None,
         "alerts": [{"type": a.alert_type, "message": a.message} for a in alerts]
 }
+# Serve frontend files
+app.mount("/", StaticFiles(directory=".", html=True), name="frontend")
